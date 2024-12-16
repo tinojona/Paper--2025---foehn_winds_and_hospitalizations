@@ -1,6 +1,8 @@
 # The effect of foehn winds on hospitalizations in Switzerland
 author: Tino Schneidewind
 
+Because we do not own the data, we cannot supply it here. Therefore the provided code does not run on its own but one has to apply for the needed data.
+
 ## Data
 The data is not part of this repository but can be accessed using the following procedure. The meteorological data was provided by the [Swiss Federal Office for Meteorology and Climatology](https://www.meteoschweiz.admin.ch/#tab=forecast-map) and is accessable through their own distribution platform [IDAweb](https://www.meteoschweiz.admin.ch/service-und-publikationen/service/wetter-und-klimaprodukte/datenportal-fuer-lehre-und-forschung.html). The hospitalization data was provided by the [Swiss Federal Office for Statistics](https://www.bfs.admin.ch/bfs/de/home.html) and the data can be accessed as described on their [webpage](https://www.bfs.admin.ch/bfs/de/home/statistiken/gesundheit/erhebungen/ms.html).
 
@@ -11,5 +13,7 @@ The files calculate_MedStat_centroids.R and MedStat_selection_centroids.R displa
 ## Analysis 
 Here we demonstrate how we determined the different crossbasis for our independent analysis and the interaction analysis. 
 
+## Functions
+Here we store all our functions needed for our code to run
 ## Findings
 In these RMarkdown files, we display how the results were visualized.
