@@ -14,6 +14,7 @@ The files calculate_MedStat_centroids.R and MedStat_selection_centroids.R displa
 Here we demonstrate how we determined the different crossbasis for our independent analysis and the interaction analysis. 
 
 ## Functions
-Here we store all our functions needed for our code to run
+Here we store all our functions needed for the code to run. Both functions were written by Antonio Gasparrini and accessed through [Antonio Gasparrini's GitHub](https://github.com/gasparrini).
+
 ## Findings
-In these RMarkdown files, we display how the results were visualized.
+In these RMarkdown files, we display how the results were visualized. They are subdivided in the corresponding results sections descriptive statistics, the direct effect of foehn and the interaction analysis.
