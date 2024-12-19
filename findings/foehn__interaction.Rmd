@@ -532,7 +532,7 @@ temp_col = "gold2"
 
 for (i in 1:length(groups_id[3])) {
 
-  colvar  =  groups_id[i+2]
+  colvar  =  groups_id[i]
 
   formula1  <- as.formula(paste0(colvar, "~ cb.temp + modif_rev"))
   formula2 <- as.formula(paste0(colvar, "~ cb.temp")) # for baseline model to get p value
