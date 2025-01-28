@@ -1,50 +1,28 @@
 ################################################################################
-# GNM FOEHN
-# - try out many different options to model foehn when combined with temperature
-# - determine the best
+# GNM Model 1:
+# the direct effect of foehn winds intensity
+# on hospitalizations without adjusting for temperature
 
 
 ### PACKAGES ####
-library(dlnm);library(splines);library(ggplot2);library(viridis);library(gnm);library(dplyr)
+library(dlnm);library(splines);library(ggplot2);library(viridis);library(gnm)
 
 ######
 
 
 ### DATA ####
-# buffer size for data file read
-buffer = 8000
 
-data = read.csv(paste0("/data/MedStat_aggregated/centroid_aggregated/hosp_buffer_", buffer, ".csv"))
+data = read.csv()
 
-data$date = as.Date(data$date)
-
-# mmt function
-source("functions/findmin.R")
-
-# index to include only stratum that have hosp counts
-data$stratum_dow = as.factor(data$stratum_dow); data$stratum = as.factor(data$stratum)
-ind_dow = tapply(data$all, data$stratum_dow, sum); ind = tapply(data$all, data$stratum, sum)
-
-data$station <- as.factor(data$station)
-
-data <- data %>%
-  mutate(y64 = a014y + a1564y) %>%
-  mutate(o64 = a6574y + a7584y + a85plusy)
-#####
-
-
-### CROSSBASIS TEMPERATURE ####
-cb.temp <- crossbasis(data$temp,
-                      lag=21,
-                      argvar=list(fun="ns", knots = quantile(data$temp, c(.5,.9), na.rm=TRUE)),
-                      arglag=list(fun="ns", knots = logknots(21,3)),
-                      group = data$station)
+# index to include only stratum that have hospitalization counts
+data$stratum_dow = as.factor(data$stratum_dow)
+ind_dow = tapply(data$all, data$stratum_dow, sum)
 
 #####
 
 
 ### FUNCTION qAIC ####
-# q-AIC computation
+
 QAIC <- function(model) {
   phi <- summary(model)$dispersion
   loglik <- sum(dpois(model$y, model$fitted.values, log=TRUE))
@@ -58,9 +36,9 @@ QAIC <- function(model) {
 # two lists of argvar and arglag arguments
 # many have been tried out, visualized and then repeatedly compared
 # the listed ones are here as an example
+
 v_var <- list(list(fun="ns", knots = quantile(data$f_id, c(.8, .9), na.rm=TRUE),Boundary=range(data$f_id)),
               list(fun="ns", knots = quantile(data$f_id, c(.8, .9, .95), na.rm=TRUE),Boundary=range(data$f_id)),
-              list(fun="ns", knots = quantile(data$f_id, c(.9, .95, .99), na.rm=TRUE),Boundary=range(data$f_id)),
               list(fun="strata", breaks = equalknots(data$f_id, nk = 3)),
               list(fun="strata", breaks = equalknots(data$f_id, nk = 4)),
               list(fun="strata", breaks = equalknots(data$f_id, nk = 5)),
@@ -79,7 +57,7 @@ v_lag <- list(list(fun="integer"),
 #####
 
 
-### ALGORITHM ####
+### METHOD OF DETERMINATION OF OPTIMAL PARAMETERS ####
 
 # define the maximum lag distance we account for
 maxlago <- 3
@@ -109,9 +87,9 @@ for (i in 1:length(v_var)){
                           group=data$station)
 
     # model
-    mod <- gnm(all ~ cb.f_id + cb.temp,
+    mod <- gnm(all ~ cb.f_id,
                data=data,
-               eliminate=stratum_dow,
+               eliminate=stratum,
                subset=ind_dow>0,
                family=quasipoisson())
 
@@ -138,3 +116,19 @@ cat("Lag function:", opt_lag, "\n")
 
 #####
 
+
+### MODEL 1 ####
+
+cb.foehn <- crossbasis(data$foehn_wind,
+                       lag = 3,
+                       argvar = list(fun="lin"),
+                       arglag = list(fun="integer"),
+                       group = data$station)
+
+model_1 <- gnm("all ~ cb.foehn",
+               data = data,
+               family=quasipoisson(),
+               eliminate=stratum_dow,
+               subset=ind_dow>0)
+
+####
