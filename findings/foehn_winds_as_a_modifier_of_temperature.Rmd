@@ -14,29 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ### PACKAGES ####
 library(dlnm);library(splines);library(ggplot2);library(viridis);library(gnm); library(dplyr);library(knitr);library(lmtest) library(ggstance)
 
-rm(list=ls())
+data = read.csv()
 
+# index to include only stratum that have hospitalization counts
+data$stratum_dow = as.factor(data$stratum_dow)
+ind_dow = tapply(data$all, data$stratum_dow, sum)
 
-
-### DATA ####
-
-# buffer size for data file read
-buffer = 8000
-
-data = read.csv(paste0("/data/MedStat_aggregated/centroid_aggregated/hosp_buffer_", buffer, ".csv"))
-
-data$date = as.Date(data$date)
-data$station <- as.factor(data$station)
-
-# index to include only stratum that have hosp counts
-data$stratum_dow = as.factor(data$stratum_dow); data$stratum = as.factor(data$stratum)
-ind_dow = tapply(data$all, data$stratum_dow, sum); ind = tapply(data$all, data$stratum, sum)
-
-
-# create larger age groups
-data <- data %>%
-  mutate(y64 = a014y + a1564y) %>%
-  mutate(o64 = a6574y + a7584y + a85plusy)
 
 # define the maximum lag distance we account for
 maxlago <- 3
@@ -44,30 +27,28 @@ maxlago <- 3
 # mmt function
 source("/functions/findmin.R")
 
-# crossbasis temp
-cb.temp <- crossbasis(data$temp,
+# crossbasis temperature
+cb.temp <- crossbasis(data$temperature,
                       lag=21,
-                      argvar=list(fun="ns", knots = quantile(data$temp, c(.5,.9), na.rm=TRUE)),
+                      argvar=list(fun="ns", knots = quantile(data$temperature, c(.5,.9), na.rm=TRUE)),
                       arglag=list(fun="ns", knots = logknots(21,3)),
                       group = data$station)
 
 # binary foehn
-foehn_bin <- ifelse(data$f_id > 72, 0, 1)
+foehn_bin     <- ifelse(data$foehn_wind > 72, 0, 1)
 foehn_bin_rev <- ifelse(foehn_bin == 1, 0, 1)
 
 # modifier functions
-modif <- cb.temp * foehn_bin
+modif     <- cb.temp * foehn_bin
 modif_rev <- cb.temp * foehn_bin_rev
 
 # groups
 groups_id = colnames(data)[c(3,9,10,24,25, 13, 14, 11, 15, 12)]
-
 letters = c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j")
 
 
 # colors
 colors <- viridis(3, option = "viridis")
-
 foehn_col = colors[2]
 temp_col = colors[3]
 
@@ -87,7 +68,6 @@ data_winter = data[data$month %in% index_w, ]
 data_summer$station_year = paste0(data_summer$station, data_summer$year)
 data_winter$station_year = paste(data_winter$station, ifelse(data_winter$month %in% 1:10, data_winter$year, data_winter$year+1))
 
-#####
 ```
 
 <br>
@@ -100,17 +80,10 @@ This Markdown document presents and summarizes the findings of an analysis conce
 
 <br>
 
-
 ```{r results_all, echo=FALSE, fig.width=3.3, fig.height=3.3, fig.align='center'}
-# png("/plots/paper/rq3_all_plot.png", width = 900, height =1200, res = 300)
-
-par(mfrow=c(1,1), 
-    mar = c(3,3,.5,.5),
-    mgp = c(1.8, .5, 0))
-
 foehn_col = "green4"
-# temp_col = "purple"
 temp_col = "gold2"
+
 
 for (i in 1:length(groups_id[1])) {
 
@@ -126,11 +99,9 @@ for (i in 1:length(groups_id[1])) {
   # prediction with and without foehn
   pred_modif   <- crosspred(cb.temp, mod_modif, cen = 20)
   pred_modif2  <- crosspred(cb.temp, mod_modif_rev, cen = 20)
-
   
   # get min value of both predictions and use for centering
   min1 <- findmin(cb.temp,pred_modif,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
-  # min2 <- findmin(cb.temp,pred_modif2,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
 
   # predict with new min values
   pred_modif_new     <- crosspred(cb.temp, mod_modif, cen = min1, by = .1)
@@ -164,46 +135,39 @@ for (i in 1:length(groups_id[1])) {
   text(25, 2.5 , labels = "(a)", pos = 4, cex = 0.7)
   }
 
-
-# dev.off()
 ```
 
+*Figure 1: Cumulative relative risk from temperature exposure (Model 4) for all-cause hospitalizations divided into foehn and non-foehn days with 95% confidence intervals. The dotted line shows the temperature that corresponds to the 99th percentile of the temperature distribution (24.7 °C).*
+
 ```{r seasonal, echo=FALSE}
-# png("/paper/rq3_all_season.png", width = 1700, height =1000, res = 300)
 
-
-par(mfrow=c(1,2), 
-    mar = c(3,3,.5,.5),
-    mgp = c(1.8, .5, 0))
 # summer plot
 # binary foehn
-foehn_bin_sum <- ifelse(data_summer$f_id > 72, 0, 1)
+foehn_bin_sum <- ifelse(data_summer$foehn_wind > 72, 0, 1)
 foehn_bin_rev_sum <- ifelse(foehn_bin_sum == 1, 0, 1)
 
 # crossbasis temp
-cb.temp_sum <- crossbasis(data_summer$temp,
+cb.temp_sum <- crossbasis(data_summer$temperature,
                       lag=21,
-                      argvar=list(fun="ns", knots = quantile(data_summer$temp, c(.5,.9), na.rm=TRUE)),
+                      argvar=list(fun="ns", knots = quantile(data_summer$temperature, c(.5,.9), na.rm=TRUE)),
                       arglag=list(fun="ns", knots = logknots(21,3)),
                       group = data_summer$station_year)
 
 # modifier functions
-modif_sum <- cb.temp_sum * foehn_bin_sum
+modif_sum     <- cb.temp_sum * foehn_bin_sum
 modif_rev_sum <- cb.temp_sum * foehn_bin_rev_sum
 
 
 
-mod_modif_sum     <-gnm(all ~ cb.temp_sum + modif_sum, data = data_summer,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
+mod_modif_sum     <- gnm(all ~ cb.temp_sum + modif_sum, data = data_summer,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 mod_modif_rev_sum <- gnm(all ~ cb.temp_sum + modif_rev_sum, data = data_summer,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 
 # prediction with and without foehn
 pred_modif_sum   <- crosspred(cb.temp_sum, mod_modif_sum, cen = 20, cumul=FALSE)
 pred_modif2_sum  <- crosspred(cb.temp_sum, mod_modif_rev_sum, cen = 20, cumul=FALSE)
 
-
 # get min value of both predictions and use for centering
 min1_sum <- findmin(cb.temp_sum, pred_modif_sum,from=quantile(data_summer$temp, .1),to=quantile(data_summer$temp, .9))
-
 
 # predict with new min values
 pred_modif_new_sum     <- crosspred(cb.temp_sum, mod_modif_sum, cen = min1_sum, cumul=FALSE, by = .2)
@@ -237,13 +201,13 @@ text(25, 2.5 , labels = "(a)", pos = 2, cex = 0.7)
 
 # winter plot
 # binary foehn
-foehn_bin_win <- ifelse(data_winter$f_id > 72, 0, 1)
+foehn_bin_win <- ifelse(data_winter$foehn_wind > 72, 0, 1)
 foehn_bin_rev_win <- ifelse(foehn_bin_win == 1, 0, 1)
 
 # crossbasis temp
-cb.temp_win <- crossbasis(data_winter$temp,
+cb.temp_win <- crossbasis(data_winter$temperature,
                       lag=21,
-                      argvar=list(fun="ns", knots = quantile(data_winter$temp, c(.5,.9), na.rm=TRUE)),
+                      argvar=list(fun="ns", knots = quantile(data_winter$temperature, c(.5,.9), na.rm=TRUE)),
                       arglag=list(fun="ns", knots = logknots(21,3)),
                       group = data_winter$station_year)
 
@@ -252,18 +216,15 @@ modif_win <- cb.temp_win * foehn_bin_win
 modif_rev_win <- cb.temp_win * foehn_bin_rev_win
 
 
-
-mod_modif_win     <-gnm(all ~ cb.temp_win + modif_win, data = data_winter,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
+mod_modif_win     <- gnm(all ~ cb.temp_win + modif_win, data = data_winter,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 mod_modif_rev_win <- gnm(all ~ cb.temp_win + modif_rev_win, data = data_winter,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 
 # prediction with and without foehn
 pred_modif_win   <- crosspred(cb.temp_win, mod_modif_win, cen = 20, cumul=FALSE)
 pred_modif2_win  <- crosspred(cb.temp_win, mod_modif_rev_win, cen = 20, cumul=FALSE)
 
-
 # get min value of both predictions and use for centering
 min1_win <- findmin(cb.temp_win, pred_modif_win,from=quantile(data_winter$temp, .1),to=quantile(data_winter$temp, .9))
-
 
 # predict with new min values
 pred_modif_new_win     <- crosspred(cb.temp_win, mod_modif_win, cen = min1_win, cumul=FALSE, by = .2)
@@ -291,18 +252,14 @@ plot(pred_modif_new_win,              ## cumulative exposure
 
 text(25, 2.5 , labels = "(b)", pos = 2, cex = 0.7)
 
-# dev.off()
 ```
+
+*Figure 2: Cumulative relative risk with 95% confidence intervals for all-cause hospitalizations (a) in the warm season (months 5-10) and (b) cold season (months 1-4,11-12) with a binary foehn wind threshold value of 72 which corresponds to 6 h of full foehn wind.*
+
 
 
 ```{r results_subgroups, echo=FALSE, fig.width=9, fig.height=9, fig.align='center'}
-# png("/plots/paper/rq3_subgroups_plot.png", width = 1800, height =1800, res = 300)
-
-par(mfrow=c(3,3), 
-    mar = c(3,3,.5,.5),
-    mgp = c(1.8, .5, 0))
-
-# for (i in 1:length(groups_id[2:10])) {
+# subgroups
 for (i in 1:length(groups_id[2:10])) {
 
   colvar  =  groups_id[i+1]
@@ -318,10 +275,8 @@ for (i in 1:length(groups_id[2:10])) {
   pred_modif   <- crosspred(cb.temp, mod_modif, cen = 20, cumul=FALSE)
   pred_modif2  <- crosspred(cb.temp, mod_modif_rev, cen = 20, cumul=FALSE)
 
-  
   # get min value of both predictions and use for centering
   min1 <- findmin(cb.temp,pred_modif,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
-  min2 <- findmin(cb.temp,pred_modif2,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
 
   # predict with new min values
   pred_modif_new     <- crosspred(cb.temp, mod_modif, cen = min1, cumul=FALSE, by = .1)
@@ -348,85 +303,13 @@ for (i in 1:length(groups_id[2:10])) {
   
   text(25, 3, labels = paste0("(", letters[i], ")"), pos = 2)}
 
-# dev.off()
 ```
 
-
-
-*Figure 1: Cumulative response ratios for (a) all-cause, (b) male, (c), female, (d) 64 years and younger, (e) older than 64 years, (f) cvd, (g) resp, (h) inf, (i) uri, (j) ment hospitalization with a binary foehn threshold value of 72 which corresponds to 6 h of full foehn. The green line shows the temperature hospitallization association when foehn was present, the yellow line when foehn was abscent.*
-
-
-
-<br>
-
-
-```{r results_subgroups_table, echo=FALSE}
-table_estimates = data.frame(all = rep(NA, 2),
-                             mal = rep(NA, 2),
-                             fem = rep(NA, 2),
-                             y64 = rep(NA, 2),
-                             o64  = rep(NA, 2),
-                             cvd = rep(NA, 2),
-                             resp = rep(NA, 2),
-                             inf = rep(NA, 2),
-                             uri = rep(NA, 2),
-                             ment = rep(NA, 2),
-                             row.names = c("RR temp + foehn [CI]", "RR temp - foehn [CI]"))
-
-
-print(quantile(data$temp, .99))
-
-for (i in 1:length(groups_id[2:10])) {
-
-  colvar  =  groups_id[i]
-  
-  
-
-  formula1  <- as.formula(paste0(colvar, "~ cb.temp + modif"))
-  formula2 <- as.formula(paste0(colvar, "~ cb.temp + modif_rev"))
-
-  # model with and without foehn
-  mod_modif     <-gnm(formula1, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
-  mod_modif_rev <- gnm(formula2, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
-
-  # prediction with and without foehn
-  pred_modif   <- crosspred(cb.temp, mod_modif, cen = 20, cumul=FALSE)
-  pred_modif2  <- crosspred(cb.temp, mod_modif_rev, cen = 20, cumul=FALSE)
-
-  
-  # get min value of both predictions and use for centering
-  min1 <- findmin(cb.temp,pred_modif,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
-  min2 <- findmin(cb.temp,pred_modif2,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
-
-  # predict with new min values
-  pred_modif_new     <- crosspred(cb.temp, mod_modif, cen = min1, cumul=FALSE, by = .1)
-  pred_modif_rev_new <- crosspred(cb.temp, mod_modif_rev, cen = min1, cumul=FALSE, by = .1)
- 
-  # extract prediction for value 24.7 and save it
-  table_estimates[1,i] = paste0( sprintf("%.3f",round(pred_modif_new$allRRfit["24.7"],digits=3)), 
-                                         " [", 
-                                         sprintf("%.3f",round(pred_modif_new$allRRlow["24.7"], digits=3)),
-                                         "-", 
-                                         sprintf("%.3f",round(pred_modif_new$allRRhigh["24.7"], digits = 3)), "]")
-  
-  table_estimates[2,i] = paste0( sprintf("%.3f",round(pred_modif_rev_new$allRRfit["24.7"],digits=3)), 
-                                         " [", 
-                                         sprintf("%.3f",round(pred_modif_rev_new$allRRlow["24.7"], digits=3)),
-                                         "-", 
-                                         sprintf("%.3f",round(pred_modif_rev_new$allRRhigh["24.7"], digits = 3)), "]")
-  
-  
-   
-}
-
-table_estimates_transposed = t(table_estimates)
-
-kable(table_estimates_transposed,
-      col.names = c("RR temp + foehn [CI]", "RR temp - foehn [CI]"),
-      align = rep("r", ncol(table_estimates_transposed) )) 
-```
+*Figure 3: Cumulative response ratios for (a) all-cause, (b) male, (c), female, (d) 64 years and younger, (e) older than 64 years, (f) cvd, (g) resp, (h) inf, (i) uri, (j) ment hospitalization with a binary foehn threshold value of 72 which corresponds to 6 h of full foehn. The green line shows the temperature hospitallization association when foehn was present, the yellow line when foehn was abscent.*
 
 ```{r results_subgroups_lollipop_figure, echo=FALSE}
+# interaction between foehn winds and temperature in subgroups at 24.7°C
+
 table_estimates = data.frame(categories = c("all","all", "mal", "mal","fem","fem","y64","y64","o64","o64",
                                             "cvd","cvd","resp","resp","inf","inf","uri","uri","ment","ment"),
                              model = rep(c("temp + foehn", "temp - foehn"), 10),
@@ -436,6 +319,7 @@ table_estimates = data.frame(categories = c("all","all", "mal", "mal","fem","fem
 
 foehn_col = "green4"
 temp_col = "gold2"
+
 
 for (i in 1:nrow(table_estimates)) {
 
@@ -468,9 +352,6 @@ for (i in 1:nrow(table_estimates)) {
 
 
 }
-table_estimates$categories[7:8] = "y64"
-table_estimates$categories[9:10] = "o64"
-
 
 table_estimates$categories <- factor(table_estimates$categories, 
                                      levels = rev(unique(table_estimates$categories)))
@@ -480,18 +361,16 @@ table_estimates$model <- factor(table_estimates$model,
 
 
 
-# png("/plots/paper/rq3_subgroups_lolli_new.png", width = 1000, height =1200, res = 300)
-
 ggplot(table_estimates, aes(y = categories, x = pred, color = model)) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "black") +
   geom_pointrange(aes(xmin = CI_low, xmax = CI_high), 
                   position = position_dodgev(height = 0.4)) +
   labs(title = "",
-       x = "cumulative RR", y = "") +
+       x = "relative risk", y = "") +
   theme_minimal() +
   scale_color_manual(
     values = c("temp + foehn" = foehn_col, "temp - foehn" = temp_col), 
-    labels = c("temp + foehn" = "temp with interaction", "temp - foehn" = "temp without interaction"),  # Map the levels to custom labels
+    labels = c("temp + foehn" = "Model 4 on foehn days", "temp - foehn" = "Model 4 on non-foehn days"),  # Map the levels to custom labels
     name = "model:"  # Custom legend title
   ) +
   annotate("text", x = Inf, y = Inf, label = "(b)", 
@@ -510,46 +389,32 @@ ggplot(table_estimates, aes(y = categories, x = pred, color = model)) +
     legend.margin = margin(.5, .5, .5, .5),
     legend.background = element_rect(fill = "white", color = "white"),
   ) +
-  guides(color = guide_legend(ncol = 1))  # Set legend to one column
-
-# dev.off()
+  guides(color = guide_legend(ncol = 1))
 ```
 
-**Prediction of the interaction term**
+*Figure 4: Cumulative relative risk (Model 4) for subgroups at 24.7 °C with 95% confidence intervals. *
 
-for all cause
+
 
 ```{r results_all_interaction, echo=FALSE, fig.width=3.3, fig.height=3.3, fig.align='center'}
-# png("/plots/paper/rq2_all_interaction_plot.png", width = 1000, height =1000, res = 300)
-
-par(mfrow=c(1,1), 
-    mar = c(3,3,.5,.5),
-    mgp = c(1.8, .5, 0))
+# all cause analysis interaction plot
 
 foehn_col = "green4"
 temp_col = "gold2"
 
 
-for (i in 1:length(groups_id[3])) {
+for (i in 1:length(groups_id[1])) {
 
   colvar  =  groups_id[i]
 
   formula1  <- as.formula(paste0(colvar, "~ cb.temp + modif_rev"))
-  formula2 <- as.formula(paste0(colvar, "~ cb.temp")) # for baseline model to get p value
 
   # model with and without foehn
   mod_modif     <- gnm(formula1, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 
-  # prediction with and without foehn
+  # prediction on the modifier
   pred_modif   <- crosspred(modif_rev, mod_modif, cen = 15.5)
   
-  # p value extraction
-  model_baseline     <- gnm(formula2, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
-  
-  
-  # anova
-  anova_result <- anova(mod_modif, model_baseline, test = "LRT")
-
   plot(pred_modif,              ## cumulative exposure
      "overall",
      ylab = "cumulative RR",
@@ -562,43 +427,26 @@ for (i in 1:length(groups_id[3])) {
      cex.axis = 0.7,
      cex.lab = 0.7)
   
-  # p value in plot
-  p_value <- round(anova_result$`Pr(>Chi)`[2], digits = 4)
-  
-  text(-22, 1.5, labels = paste0("p-value = " , as.character(round(p_value, digits=4))), pos = 4, cex = 0.7, )
-
-  
   }
 
-# dev.off()
 ```
 
+*Figure 5: Interaction between foehn and temperature with 95% confidence interval for all-cause hospitalizations. *
 
 ```{r results_subgroups_interaction, echo=FALSE, fig.width=9, fig.height=9, fig.align='center'}
-# png("/plots/paper/rq2_subgroups_interaction_plot.png", width = 1800, height =1800, res = 300)
-
-par(mfrow=c(3,3), 
-    mar = c(3,3,.5,.5),
-    mgp = c(1.8, .5, 0))
+# subgroup analysis interaction plot
 
 for (i in 1:length(groups_id[1:9])) {
 
   colvar  =  groups_id[i+1]
 
   formula1  <- as.formula(paste0(colvar, "~ cb.temp + modif_rev"))
-  formula2 <- as.formula(paste0(colvar, "~ cb.temp"))
-  
   
   # model with and without foehn
-  mod_modif     <-gnm(formula1, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
-  model_baseline <- gnm(formula2, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
+  mod_modif   <- gnm(formula1, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
 
-  # prediction with and without foehn
+  # prediction on the modifier
   pred_modif   <- crosspred(modif_rev, mod_modif, cen = 15.5, by = 0.1)
-  
-  # p value extraction
-  anova_result <- anova(mod_modif, model_baseline, test = "LRT")
-  p_value <- round(anova_result$`Pr(>Chi)`[2], digits = 4)
                    
   plot(pred_modif,              ## cumulative exposure
      "overall",
@@ -613,11 +461,8 @@ for (i in 1:length(groups_id[1:9])) {
      cex.lab = 0.7)
   text(-14, 2.4, labels = paste0("(", letters[i], ")"), pos = 2)
   
-  # p value in plot
-  text(-14, 2, labels = paste0("p-value = " , as.character(p_value)), pos = 4)
-  
   }
 
-# dev.off()
 ```
 
+*Figure 6: Interaction between foehn wind and temperature with 95% confidence interval for (a) male, (b) female, (c) 64 years and younger, (d) older than 64, (e) circulatory, (f) respiratory, (g) infectious, (h) genitourinary, (i) mental hospitalizations.*

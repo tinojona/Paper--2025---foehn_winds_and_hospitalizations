@@ -1,0 +1,136 @@
+---
+title: "the direct effect of foehn winds on hospitalizations"
+author: "Tino Schneidewind"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r data, echo=FALSE, warning=FALSE, message=FALSE}
+library(dlnm);library(splines);library(ggplot2);library(viridis);library(gnm); library(dplyr);library(knitr);library(kableExtra);library(webshot2); library(magick)
+
+data = read.csv() 
+
+# index to include only stratum that have hospitalization counts
+data$stratum_dow = as.factor(data$stratum_dow)
+ind_dow = tapply(data$all, data$stratum_dow, sum)
+
+# mmt function
+source("../functions/findmin.R")
+
+```
+
+<br>
+
+This Markdown document presents and summarizes the findings of an analysis concerning the following research question.
+
+<br>
+
+#### *Results for RQ1+RQ3: are hospitalizations independently affected by foehn winds in Switzerland? are certain subgroups (hospitalization cause/sex/age) a differentiating factor of this effect?*
+
+<br>
+
+*Table 1: Response ration for all-cause hospitalizations and subgroups at foehn wind value of 72 which corresponds to 6 h of full foehn. *
+
+```{r resultss, echo=FALSE}
+
+#### crossbasis temperature and foehn widns
+cb.temp <- crossbasis(data$temperature,
+                      lag=21,
+                      argvar=list(fun="ns", knots = quantile(data$temperature, c(.5,.9), na.rm=TRUE)),
+                      arglag=list(fun="ns", knots = logknots(21,3)),
+                      group = data$station)
+
+cb.foehn <- crossbasis(data$foehn_wind,
+                       lag = 3,
+                       argvar = list(fun="lin"),
+                       arglag = list(fun="integer"),
+                       group = data$station)
+
+
+groups_id = colnames(data)[c(3,9,10,24,25, 13, 14, 11, 15, 12)]
+
+table_estimates = data.frame(all = rep(NA, 2),
+                             mal = rep(NA, 2),
+                             fem = rep(NA, 2),
+                             y64 = rep(NA, 2),
+                             o64  = rep(NA, 2),
+                             cvd = rep(NA, 2),
+                             resp = rep(NA, 2),
+                             inf = rep(NA, 2),
+                             uri = rep(NA, 2),
+                             ment = rep(NA, 2),
+                             row.names = c("Model 1", "Model 2"))
+
+# Model 1 + 2
+for (i in 1:length(groups_id)) {
+
+  colvar = groups_id[i]
+  
+  # formula, only foehn wind
+  formula1 <- as.formula(paste(colvar, "~ cb.foehn"))
+
+  # Model 1
+  model_1 <- gnm(formula1, 
+                 data = data,  
+                 family=quasipoisson(), 
+                 eliminate=stratum_dow, 
+                 subset=ind_dow>0)
+
+  # prediction
+  pred_model_1 <- crosspred(cb.foehn, model_1, at=0:288, cumul=FALSE, cen = 0)
+
+  # extract prediction for value 72 with confidence interaval and save it
+  table_estimates[1,i] = paste0( sprintf("%.3f",round(pred_model_1$allRRfit["72"],digits=3)), 
+                                         " [", 
+                                         sprintf("%.3f",round(pred_model_1$allRRlow["72"], digits=3)),
+                                         "-", 
+                                         sprintf("%.3f",round(pred_model_1$allRRhigh["72"], digits = 3)), "]")
+  
+  
+  
+  # formula, foehn wind + temperature
+  formula2 <- as.formula(paste(colvar, "~ cb.foehn + cb.temp"))
+
+  # Model 2
+  model_2 <- gnm(formula2, 
+                 data = data,  
+                 family=quasipoisson(), 
+                 eliminate=stratum_dow, 
+                 subset=ind_dow>0)
+
+  # prediction
+  pred_model_2 <- crosspred(cb.foehn, mod_nm2, at=0:288, cumul=FALSE, cen = 0)
+
+  # extract prediction for value 72 with confidence intervals and save it
+  table_estimates[2,i] = paste0( sprintf("%.3f",round(pred_model_2$allRRfit["72"],digits = 3)),
+                                 " [", 
+                                 sprintf("%.3f",round(pred_model_2$allRRlow["72"],digits=3)),
+                                 "-", 
+                                 sprintf("%.3f",round(pred_model_2$allRRhigh["72"], digits = 3)), "]")
+  
+
+
+}
+
+# rotate table
+table_estimates_transposed = t(table_estimates)
+
+# finished table
+kable(table_estimates_transposed,
+      # digits = 3,
+      col.names = c("Model 1", "Model 2"),
+      align = rep("r", ncol(table_estimates_transposed) )) %>%
+   kable_styling(full_width = FALSE) 
+
+```
+
+
+
+
+
+

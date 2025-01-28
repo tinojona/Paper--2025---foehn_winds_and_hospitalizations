@@ -26,9 +26,9 @@ ind_dow = tapply(data$all, data$stratum_dow, sum)
 # and low ambient temperature: a multicountry observational study.
 # Lancet (London, England). 2015;386.9991:369–375.
 
-cb.temp <- crossbasis(data$temp,
+cb.temp <- crossbasis(data$temperature,
                       lag=21,
-                      argvar=list(fun="ns", knots = quantile(data$temp, c(.5,.9), na.rm=TRUE)),
+                      argvar=list(fun="ns", knots = quantile(data$temperature, c(.5,.9), na.rm=TRUE)),
                       arglag=list(fun="ns", knots = logknots(21,3)),
                       group = data$station)
 
@@ -38,7 +38,7 @@ cb.temp <- crossbasis(data$temp,
 ### INTERACTION WITH FOEHN WINDS  ####
 
 # binary foehn_threshold
-foehn_bin      <- ifelse(data$f_id >= 72, 0, 1)
+foehn_bin      <- ifelse(data$foehn_wind >= 72, 0, 1)
 foehn_bin_rev  <- ifelse(foehn_bin == 1, 0, 1)
 
 # modifier functions

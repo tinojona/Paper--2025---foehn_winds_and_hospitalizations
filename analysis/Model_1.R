@@ -80,7 +80,7 @@ for (i in 1:length(v_var)){
     arglag = v_lag[[j]]
 
     # crossbasis
-    cb.f_id <- crossbasis(data$f_id,
+    cb.f_id <- crossbasis(data$foehn_wind,
                           lag=maxlago,
                           argvar=argvar,
                           arglag=arglag,

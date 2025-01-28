@@ -29,7 +29,7 @@ ind_dow = tapply(data$all, data$stratum_dow, sum)
 
 cb.temp <- crossbasis(data$temperature,
                       lag=21,
-                      argvar=list(fun="ns", knots = quantile(data$temp, c(.5,.9), na.rm=TRUE)),
+                      argvar=list(fun="ns", knots = quantile(data$temperature, c(.5,.9), na.rm=TRUE)),
                       arglag=list(fun="ns", knots = logknots(21,3)),
                       group = data$station)
 
