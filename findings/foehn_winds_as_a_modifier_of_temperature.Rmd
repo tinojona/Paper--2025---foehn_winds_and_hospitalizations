@@ -143,7 +143,7 @@ for (i in 1:length(groups_id[1])) {
 
 # summer plot
 # binary foehn
-foehn_bin_sum <- ifelse(data_summer$foehn_wind > 72, 0, 1)
+foehn_bin_sum <- ifelse(data_summer$foehn_wind >= 72, 0, 1)
 foehn_bin_rev_sum <- ifelse(foehn_bin_sum == 1, 0, 1)
 
 # crossbasis temp
@@ -201,7 +201,7 @@ text(25, 2.5 , labels = "(a)", pos = 2, cex = 0.7)
 
 # winter plot
 # binary foehn
-foehn_bin_win <- ifelse(data_winter$foehn_wind > 72, 0, 1)
+foehn_bin_win <- ifelse(data_winter$foehn_wind >= 72, 0, 1)
 foehn_bin_rev_win <- ifelse(foehn_bin_win == 1, 0, 1)
 
 # crossbasis temp
