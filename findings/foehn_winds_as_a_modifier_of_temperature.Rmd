@@ -35,7 +35,7 @@ cb.temp <- crossbasis(data$temperature,
                       group = data$station)
 
 # binary foehn
-foehn_bin     <- ifelse(data$foehn_wind > 72, 0, 1)
+foehn_bin     <- ifelse(data$foehn_wind >= 72, 0, 1)
 foehn_bin_rev <- ifelse(foehn_bin == 1, 0, 1)
 
 # modifier functions
