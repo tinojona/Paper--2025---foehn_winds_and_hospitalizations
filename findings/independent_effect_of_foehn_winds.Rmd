@@ -34,9 +34,9 @@ This Markdown document presents and summarizes the findings of an analysis conce
 
 <br>
 
-*Table 1: Response ration for all-cause hospitalizations and subgroups at foehn wind value of 72 which corresponds to 6 h of full foehn. *
+*Table 2: Response ration for all-cause hospitalizations and subgroups at foehn wind value of 72 which corresponds to 6 h of full foehn. *
 
-```{r resultss, echo=FALSE}
+```{r results, echo=FALSE}
 
 #### crossbasis temperature and foehn widns
 cb.temp <- crossbasis(data$temperature,

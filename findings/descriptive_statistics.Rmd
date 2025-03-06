@@ -152,7 +152,6 @@ subs_y_all_hosp = data %>%
   summarize(summe = sum(all, na.rm = TRUE))
 
 # FOR ALL STATIONS COMBINED
-# gen_stats$period[1] = paste0(min(data$date), " - ", max(data$date))
 gen_stats$period[1] = as.character(min(data$date))
 gen_stats$years[1] = length(unique(data$station_year))
 gen_stats$temp[1] = paste0( sprintf("%.1f",round(mean(subs_y_all_weather$mittel_temp),digits=1)), " [", sprintf("%.1f",round(sd(subs_y_all_weather$mittel_temp), digits= 1)), "]")
@@ -201,7 +200,7 @@ kable(gen_stats,
 
 <br>
 
-#### Appendix
+#### Supplementary Materia
 
 
 ```{r plot_foehn, echo=FALSE, fig.width= 6, fig.height=6, fig.align = 'center'}
@@ -323,7 +322,7 @@ text(monthly_ticks[12], 6, labels = "(f)", pos = 2)
 
 ```
 
-*Figure 1: (a) daily foehn score distribution excluding 0-foehn days, (b) daily mean foehn score with 30-day moving averages of the 50th, 75th, 90th percentile, (c) daily mean temperature distribution, (d) daily averages of daily mean temperature with 30-day moving averages of the 25th, 50th, 75th percentile, (e) daily all-cause hospitalization distribution, (f) daily mean all-cause hospitalizations with 30-day moving averages of the 25th, 50th, 75th percentile.*
+*sFigure 2: (a) daily foehn score distribution excluding 0-foehn days, (b) daily mean foehn score with 30-day moving averages of the 50th, 75th, 90th percentile, (c) daily mean temperature distribution, (d) daily averages of daily mean temperature with 30-day moving averages of the 25th, 50th, 75th percentile, (e) daily all-cause hospitalization distribution, (f) daily mean all-cause hospitalizations with 30-day moving averages of the 25th, 50th, 75th percentile.*
 
 <br>
 
@@ -397,11 +396,21 @@ text(as.Date("2008-01-01")+70, 5.2, labels = "(x)", pos = 2, col = "brown1", cex
   
 ```
 
-*Figure 2: (a) 30-day moving average time series of mean daily foehn, (b) 30-day moving average time series of average daily mean temperature, (c) 30-day moving average of mean daily all-cause hospitalization. (1) start of data from Altdorf, Chur, Davos, Montana, (2) start of data from Magadino, (3) start of data from Lugano, (4) start of data from Visp, (5) start of data from Poschiavo. (x) redefinition of the MedStat regions by the Swiss Federal Office for Statistics.*
+*sFigure 3: (a) 30-day moving average time series of mean daily foehn, (b) 30-day moving average time series of average daily mean temperature, (c) 30-day moving average of mean daily all-cause hospitalization. (1) start of data from Altdorf, Chur, Davos, Montana, (2) start of data from Magadino, (3) start of data from Lugano, (4) start of data from Visp, (5) start of data from Poschiavo. (x) redefinition of the MedStat regions by the Swiss Federal Office for Statistics.*
 
 <br>
 
-*Table 2: Contribution in percent of different subgroups to all-cause hospitalizations counts across all stations and per station.*
+*sTable 1: Abbreviation and location of meteorological measurement stations and their assigned MedStat regions within the 8 km buffer.*
+
+```{r station_stats, echo=FALSE}
+# see section "data"
+kable(station_MedStat_full,
+      align = rep("r", ncol(station_MedStat_full))) 
+```
+
+<br>
+
+*sTable 3: Contribution in percent of different subgroups to all-cause hospitalizations counts across all stations and per station.*
 
 
 
@@ -457,14 +466,5 @@ kable(subgroups,
 
 
 
-<br>
-
-*Table 3: Abbreviation and location of meteorological measurement stations and their assigned MedStat regions within the 8 km buffer.*
-
-```{r station_stats, echo=FALSE}
-# see section "data"
-kable(station_MedStat_full,
-      align = rep("r", ncol(station_MedStat_full))) 
-```
 
 <br>
