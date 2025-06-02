@@ -148,16 +148,15 @@ for (i in 1:nrow(table_estimates)) {
     formula1 = as.formula(paste0(colvar, "~ cb.temp + modif_rev")) 
   }
     
+  # calculate minimum hospitalization temperature for each subpopulation
+  formulamin = as.formula(paste0(colvar, "~ cb.temp + modif"))
+  mod_modif     <-gnm(formulamin, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
+  pred_modif   <- crosspred(cb.temp, mod_modif, cen = 20, cumul=FALSE)
+  min1 <- findmin(cb.temp,pred_modif,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
   
   
   # model with and without foehn
   mod_modif     <-gnm(formula1, data = data,  family=quasipoisson(), eliminate=stratum_dow, subset=ind_dow>0)
-
-  # prediction with and without foehn
-  pred_modif   <- crosspred(cb.temp, mod_modif, cen = 20, cumul=FALSE)
-
-  # get min value of both predictions and use for centering
-  min1 <- findmin(cb.temp,pred_modif,from=quantile(data$temp, .1),to=quantile(data$temp, .9))
 
   # predict with new min values
   pred_modif_new  <- crosspred(cb.temp, mod_modif, cen = min1, cumul=FALSE, by = .1)
