@@ -1,5 +1,11 @@
 # The risk of hospitalization associated with foehn winds and heat in the mountainous region of Switzerland.
-author: Tino Schneidewind
+authors: Tino Schneidewind 1,2, Sujung Lee 1,2, Ana Maria Vicedo-Cabrera 1,2, Apolline Saucy 1,2
+
+
+1 Institute for Social and Preventive Medicine, University of Bern, Switzerland
+
+2 Oeschger Centre for Climate Change Research, University of Bern, Switzerland
+
 
 This repository presents the main model parametrizations of the analysis, however, the code does not run on its own, because we cannot supply the data here as we are not authorized to do so. 
 
